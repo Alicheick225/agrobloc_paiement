@@ -9,5 +9,4 @@ public class AgroblocPaiementApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(AgroblocPaiementApplication.class, args);
 	}
-
 }
