@@ -11,16 +11,10 @@ public class FlutterwaveConfig {
     @Value("${flutterwave.secret-key}")
     private String secretKey;
 
-    @Value("${flutterwave.base-url}")
-    private String baseUrl;
-
     public String getAccessToken() {
         return secretKey;
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
-    }
 
     @Bean
     public RestTemplate restTemplate() {
