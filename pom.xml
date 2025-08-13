@@ -67,6 +67,15 @@
 			<version>20240303</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.paydunya</groupId>
+			<artifactId>paydunya-java</artifactId>
+			<version>1.0.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/src/main/resources/libs/paydunya_java_latest.jar</systemPath>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

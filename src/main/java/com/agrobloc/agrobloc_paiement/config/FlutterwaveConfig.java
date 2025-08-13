@@ -15,7 +15,6 @@ public class FlutterwaveConfig {
         return secretKey;
     }
 
-
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
