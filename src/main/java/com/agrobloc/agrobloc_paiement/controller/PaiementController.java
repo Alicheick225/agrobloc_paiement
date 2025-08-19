@@ -5,10 +5,12 @@ import com.paydunya.neptune.PaydunyaCheckoutInvoice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/paiement")
 public class PaiementController {
-
     private final PaiementService paiementService;
 
     public PaiementController(PaiementService paiementService) {
@@ -27,8 +29,23 @@ public class PaiementController {
             // Définir le montant total ou laisser PayDunya le calculer
             invoice.setTotalAmount(request.getQuantity() * request.getUnitPrice());
 
-            // Retourner l'objet invoice (ou juste le token/public URL)
-            return ResponseEntity.ok(invoice.getToken());
+            Map<String, Object> response = new HashMap<>();
+
+            // Tentative de création de facture auprès de PayDunya
+            if (invoice.create()) {
+                // ✅ Facture créée avec succès
+                response.put("status", invoice.getStatus());
+                response.put("message", invoice.getResponseText());
+                response.put("invoiceUrl", invoice.getInvoiceUrl()); // URL de redirection pour payer
+                response.put("token", invoice.getToken());
+            } else {
+                // ❌ Échec
+                response.put("status", "FAILED");
+                response.put("message", invoice.getResponseText());
+                response.put("code", invoice.getResponseCode());
+            }
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur lors de la création de l'invoice : " + e.getMessage());

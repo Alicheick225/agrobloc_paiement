@@ -26,14 +26,35 @@ public class Compte {
     @Column(name = "numero_compte", length = 50)
     private String numeroCompte;
 
+    public void setSolde(BigDecimal solde) {
+        this.solde = solde;
+    }
+
+    public void setTypeCompte(TypeCompte typeCompte) {
+        this.typeCompte = typeCompte;
+    }
 
     @ColumnDefault("0.00")
-    @Column(name = "montant", nullable = false, precision = 12, scale = 2)
-    private BigDecimal montant;
+    @Column(name = "solde", nullable = false, precision = 12, scale = 2)
+    private BigDecimal solde;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "moyens_paiement_id", nullable = false)
-    private MoyensPaiement moyensPaiement1;
+    private MoyensPaiement moyensPaiement;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    public enum TypeCompte {
+        BUYER,
+        MERCHANT,
+        ESCROW
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_compte", nullable = false)
+    private TypeCompte typeCompte;
 
     public UUID getId() {
         return id;
@@ -43,15 +64,6 @@ public class Compte {
         this.id = id;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "banque_id", nullable = false)
-    private MoyensPaiement moyensPaiement;
-    
-
     public String getNumeroCompte() {
         return numeroCompte;
     }
@@ -60,12 +72,12 @@ public class Compte {
         this.numeroCompte = numeroCompte;
     }
 
-    public BigDecimal getMontant() {
-        return montant;
+    public BigDecimal getSolde() {
+        return solde;
     }
 
     public void setMontant(BigDecimal montant) {
-        this.montant = montant;
+        this.solde = montant;
     }
 
     public User getUser() {
