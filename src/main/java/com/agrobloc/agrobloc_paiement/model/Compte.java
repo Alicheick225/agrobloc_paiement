@@ -26,14 +26,6 @@ public class Compte {
     @Column(name = "numero_compte", length = 50)
     private String numeroCompte;
 
-    public void setSolde(BigDecimal solde) {
-        this.solde = solde;
-    }
-
-    public void setTypeCompte(TypeCompte typeCompte) {
-        this.typeCompte = typeCompte;
-    }
-
     @ColumnDefault("0.00")
     @Column(name = "solde", nullable = false, precision = 12, scale = 2)
     private BigDecimal solde;
@@ -46,15 +38,13 @@ public class Compte {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public enum TypeCompte {
-        BUYER,
-        MERCHANT,
-        ESCROW
-    }
+    @ColumnDefault("false")
+    @Column(name = "\"isEscrowGlobal\"", nullable = false)
+    private Boolean isEscrowGlobal = false;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type_compte", nullable = false)
-    private TypeCompte typeCompte;
+    public void setSolde(BigDecimal solde) {
+        this.solde = solde;
+    }
 
     public UUID getId() {
         return id;

@@ -10,6 +10,7 @@ import com.agrobloc.agrobloc_paiement.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,12 +58,15 @@ public class CompteService {
     }
 
 
-       public void delete(Compte compte) {
-           compteRepository.delete(compte);
-       }
+    public void delete(Compte compte) {
+       compteRepository.delete(compte);
+    }
 
-        public Optional<Compte> findByNumeroCompte( String numeroCompte) {
-            return compteRepository.findByNumeroCompte(numeroCompte);
-        }
+    @Transactional(readOnly = true)
+    public Compte findEscrowAccount() {
+        return compteRepository.findByIsEscrowGlobal(true)
+                .orElseThrow(() -> new IllegalStateException("⚠️ Compte séquestre global introuvable en base."));
+    }
+
 
 }

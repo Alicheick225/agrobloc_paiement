@@ -1,5 +1,7 @@
 package com.agrobloc.agrobloc_paiement.model;
 
+import com.agrobloc.agrobloc_paiement.enums.StatusTransaction;
+import com.agrobloc.agrobloc_paiement.enums.TypeTransaction;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,20 +39,23 @@ public class Transaction {
     @Column(name = "montant", nullable = false, precision = 12, scale = 2)
     private BigDecimal montant;
 
-    @Column(name = "date_creation", nullable = false)
+    @Column(name = "date", nullable = false)
     private Instant date = Instant.now();
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "statut", length = 20, nullable = false)
-    private StatusTransaction statut = StatusTransaction.PENDING;
+    @Column(name = "status", length = 20, nullable = false)
+    private String statut = StatusTransaction.PENDING.getLibelle();
 
-    public String getType() {
-        return type;
-    }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_source_id")
+    private UserWallet walletSource;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_destination_id")
+    private UserWallet walletDestination;
+
+    @Column(name = "type", length = 20)
+    private String type = TypeTransaction.PAIEMENT.getLibelle();
 
     public UUID getId() {
         return id;
@@ -108,21 +113,12 @@ public class Transaction {
         this.date = date;
     }
 
-    public StatusTransaction getStatut() {
+    public String getStatut() {
         return statut;
     }
 
-    public void setStatut(StatusTransaction statut) {
+    public void setStatut(String statut) {
         this.statut = statut;
-    }
-
-    @Column(name = "type", length = 20, nullable = false)
-    private String type;
-
-    public enum StatusTransaction {
-        PENDING,
-        SUCCESS,
-        FAILED
     }
 
 }

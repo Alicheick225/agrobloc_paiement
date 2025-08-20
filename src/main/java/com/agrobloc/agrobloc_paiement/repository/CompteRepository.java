@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface CompteRepository extends JpaRepository<Compte, UUID> {
     Optional<Compte> findByNumeroCompte(String numeroCompte);
+    Optional<Compte> findByIsEscrowGlobal(boolean isEscrowGlobal);
 }

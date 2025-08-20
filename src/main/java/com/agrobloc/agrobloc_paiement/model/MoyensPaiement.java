@@ -16,6 +16,17 @@ import java.util.UUID;
 @Table(name = "moyens_paiement")
 public class MoyensPaiement {
 
+    @Id
+    @ColumnDefault("uuid_generate_v4()")
+    @Column(name = "id", nullable = false)
+    private UUID id;
+
+    @Column(name = "libelle", length = 100)
+    private String libelle;
+
+    @Column(name = "logo", length = Integer.MAX_VALUE)
+    private String logo;
+
     public String getLogo() {
         return logo;
     }
@@ -39,16 +50,4 @@ public class MoyensPaiement {
     public void setLibelle(String libelle) {
         this.libelle = libelle;
     }
-
-    @Id
-    @ColumnDefault("uuid_generate_v4()")
-    @Column(name = "id", nullable = false)
-    private UUID id;
-
-    @Column(name = "libelle", length = 100)
-    private String libelle;
-
-    @Column(name = "logo", length = Integer.MAX_VALUE)
-    private String logo;
-
 }
