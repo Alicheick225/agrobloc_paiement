@@ -1,7 +1,11 @@
 package com.agrobloc.agrobloc_paiement.service;
 
+import com.agrobloc.agrobloc_paiement.enums.StatusTransaction;
+import com.agrobloc.agrobloc_paiement.model.Transaction;
 import com.agrobloc.agrobloc_paiement.model.UserWallet;
+import com.agrobloc.agrobloc_paiement.repository.TransactionRepository;
 import com.agrobloc.agrobloc_paiement.repository.UserWalletRepository;
+import org.antlr.v4.runtime.misc.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,12 +18,13 @@ public class UserWalletService {
         @Autowired
         private UserWalletRepository walletRepository;
 
+        @Autowired
+        private TransactionRepository transactionRepository;
+
         /**
          * Créditer un wallet en "attente de libération"
          */
-        public void creditWalletEnAttente(UUID walletId, BigDecimal montant) {
-            UserWallet wallet = walletRepository.findById(walletId)
-                    .orElseThrow(() -> new RuntimeException("Wallet introuvable"));
+        public void creditWalletEnAttente(UserWallet wallet, BigDecimal montant) {
 
             wallet.setSoldeEnAttente(wallet.getSoldeEnAttente().add(montant));
             walletRepository.save(wallet);
@@ -28,11 +33,9 @@ public class UserWalletService {
         /**
          * Libérer les fonds en attente pour les rendre disponibles
          */
-        public void rendreFondsUtilisables(UUID walletId) {
-            UserWallet wallet = walletRepository.findById(walletId)
-                    .orElseThrow(() -> new RuntimeException("Wallet introuvable"));
+        public void rendreFondsUtilisables(UserWallet wallet, BigDecimal montant) {
 
-            wallet.setSoldeDisponible(wallet.getSoldeDisponible().add(wallet.getSoldeEnAttente()));
+            wallet.setSoldeDisponible(wallet.getSoldeDisponible().add(montant));
             wallet.setSoldeEnAttente(BigDecimal.ZERO);
             walletRepository.save(wallet);
         }

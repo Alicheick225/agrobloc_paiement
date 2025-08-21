@@ -33,26 +33,28 @@ public class Transaction {
     private Compte compteDestination;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "moyen_paiement_id")
-    private MoyensPaiement moyenPaiement;
-
-    @Column(name = "montant", nullable = false, precision = 12, scale = 2)
-    private BigDecimal montant;
-
-    @Column(name = "date", nullable = false)
-    private Instant date = Instant.now();
-
-    @Column(name = "status", length = 20, nullable = false)
-    private String statut = StatusTransaction.PENDING.getLibelle();
-
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_source_id")
     private UserWallet walletSource;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_destination_id")
     private UserWallet walletDestination;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "moyen_paiement_id")
+    private MoyensPaiement moyenPaiement;
+
+    @Column(name = "montant", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montant;
+
+    @Column(name = "date_creation", nullable = false)
+    private Instant dateCreation;
+
+    @JoinColumn(name = "date_success")
+    private Instant dateSuccess;
+
+    @Column(name = "status", length = 20, nullable = false)
+    private String statut = StatusTransaction.PENDING.getLibelle();
 
     @Column(name = "type", length = 20)
     private String type = TypeTransaction.PAIEMENT.getLibelle();
@@ -105,12 +107,12 @@ public class Transaction {
         this.montant = montant;
     }
 
-    public Instant getDate() {
-        return date;
+    public Instant getDateCreation() {
+        return dateCreation;
     }
 
-    public void setDate(Instant date) {
-        this.date = date;
+    public void setDateCreation(Instant dateCreation) {
+        this.dateCreation = dateCreation;
     }
 
     public String getStatut() {

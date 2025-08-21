@@ -1,6 +1,9 @@
 package com.agrobloc.agrobloc_paiement.dto;
 
+import com.agrobloc.agrobloc_paiement.model.UserWallet;
+
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class PaymentRequest {
     public String getNumeroCompteAcheteur() {
@@ -11,11 +14,11 @@ public class PaymentRequest {
         this.numeroCompteAcheteur = numeroCompteAcheteur;
     }
 
-    public String getWalletProducteur() {
+    public UserWallet getWalletProducteur() {
         return walletProducteur;
     }
 
-    public void setWalletProducteur(String walletProducteur) {
+    public void setWalletProducteur(UserWallet walletProducteur) {
         this.walletProducteur = walletProducteur;
     }
 
@@ -28,9 +31,17 @@ public class PaymentRequest {
     }
 
     private String numeroCompteAcheteur; // compte réel
-    private String walletProducteur;     // wallet interne du producteur
+    private UserWallet walletProducteur;     // wallet interne du producteur
     private BigDecimal montant;
+    private UUID commandeId;
 
+    public UUID getCommandeId() {
+        return commandeId;
+    }
+
+    public void setCommandeId(UUID commandeId) {
+        this.commandeId = commandeId;
+    }
 
 
 }

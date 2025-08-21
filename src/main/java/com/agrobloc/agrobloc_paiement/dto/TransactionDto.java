@@ -80,7 +80,7 @@ public class TransactionDto {
                 tx.getMontant(),
                 tx.getType().toString(),
                 tx.getStatut().toString(),
-                tx.getDate()
+                tx.getDateCreation() != null ? Instant.from(tx.getDateCreation()) : null
         );
     }
 }

@@ -4,7 +4,8 @@ public enum StatusTransaction {
     PENDING("En attente"),
     SUCCESS("Succès"),
     FAILED("Échec"),
-    FREE("Libéré");
+    FREE("Libéré"),
+    REIMBURSED("Remboursé");
 
     private final String libelle;
 

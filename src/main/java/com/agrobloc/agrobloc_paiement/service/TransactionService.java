@@ -1,5 +1,7 @@
 package com.agrobloc.agrobloc_paiement.service;
 
+import com.agrobloc.agrobloc_paiement.dto.CommandesVentePaiementDto;
+import com.agrobloc.agrobloc_paiement.dto.TransactionDto;
 import com.agrobloc.agrobloc_paiement.enums.StatusTransaction;
 import com.agrobloc.agrobloc_paiement.enums.TypeTransaction;
 import com.agrobloc.agrobloc_paiement.model.Compte;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,10 +27,18 @@ public class TransactionService {
     private CompteRepository compteRepository;
 
     @Autowired
+    private CompteService compteService;
+
+    @Autowired
     private TransactionRepository transactionRepository;
 
     @Autowired
     private UserWalletRepository userWalletRepository;
+
+    @Autowired
+    private RealPaymentApiService realPaymentApiService;
+    @Autowired
+    private UserWalletService userWalletService;
 
     /**
      * Créditer un compte depuis le compte séquestre
@@ -61,12 +73,11 @@ public class TransactionService {
         transaction.setMontant(montant);
         transaction.setType("CREDIT");
         transaction.setStatut(StatusTransaction.SUCCESS.getLibelle());
-        transaction.setDate(Instant.now());
+        transaction.setDateCreation(Instant.now());
         transactionRepository.save(transaction);
 
         return compteDestination;
     }
-
 
     /**
      * Débiter un compte vers le séquestre
@@ -101,7 +112,7 @@ public class TransactionService {
         transaction.setMontant(montant);
         transaction.setType("DEBIT");
         transaction.setStatut(StatusTransaction.SUCCESS.getLibelle());
-        transaction.setDate(Instant.now());
+        transaction.setDateCreation(Instant.now());
         transactionRepository.save(transaction);
 
         return compteSource;
@@ -109,25 +120,28 @@ public class TransactionService {
 
     @Transactional
     public Transaction rechargerWallet(UUID walletId, String numeroCompte, BigDecimal montant) {
-        // 1️⃣ Récupérer le wallet interne
+        // Récupérer le wallet interne
         UserWallet wallet = userWalletRepository.findById(walletId)
                 .orElseThrow(() -> new RuntimeException("Wallet utilisateur introuvable"));
 
-        // 2️⃣ Récupérer le compte réel
+        // Récupérer le compte
         Compte compteReel = compteRepository.findByNumeroCompte(numeroCompte)
-                .orElseThrow(() -> new RuntimeException("Compte réel introuvable"));
+                .orElseThrow(() -> new RuntimeException("Compte non trouvé"));
 
-        // 3️⃣ Débit du compte réel (ici simulation)
-        boolean debitOk = simulerDebitCompteExterne(compteReel, montant);
+        // Débit du compte réel
+        boolean debitOk = realPaymentApiService.debiter(compteReel, montant);
 
-        // 4️⃣ Crédit du wallet interne si débit réussi
+        // Crédit du wallet interne si débit réussi
         Transaction transaction = new Transaction();
+        transaction.setNumeroTransaction(UUID.randomUUID().toString());
         transaction.setWalletSource(null); // argent vient d'un compte réel
         transaction.setCompteSource(compteReel);
         transaction.setWalletDestination(wallet);
+        transaction.setCompteDestination(null);
+        transaction.setMoyenPaiement(compteReel.getMoyensPaiement());
         transaction.setMontant(montant);
         transaction.setType(TypeTransaction.RECHARGEMENT.getLibelle());
-        transaction.setDate(Instant.now());
+        transaction.setDateCreation(Instant.now());
 
         if (debitOk) {
             // Crédit du wallet
@@ -145,20 +159,87 @@ public class TransactionService {
         return transaction;
     }
 
-    /**
-     * Méthode simulant le débit du compte réel.
-     * Ici, tu peux remplacer par un vrai appel API mobile money / banque.
-     */
-    private boolean simulerDebitCompteExterne(Compte compte, BigDecimal montant) {
-        // Vérifier solde disponible
-        if (compte.getSolde().compareTo(montant) < 0) {
-            return false;
+
+    @Transactional
+    public Transaction retirerDuWallet(UUID walletId, String numeroCompte, BigDecimal montant) {
+        // 1️⃣ Récupérer le wallet interne
+        UserWallet wallet = userWalletRepository.findById(walletId)
+                .orElseThrow(() -> new RuntimeException("Wallet utilisateur introuvable"));
+
+        // 2️⃣ Vérifier le solde disponible
+        if (wallet.getSoldeDisponible().compareTo(montant) < 0) {
+            throw new RuntimeException("Solde insuffisant pour effectuer le retrait");
         }
-        // Débit du compte réel simulé
-        compte.setSolde(compte.getSolde().subtract(montant));
-        compteRepository.save(compte);
-        return true;
+
+        // 3️⃣ Récupérer le compte réel destinataire
+        Compte compteReel = compteRepository.findByNumeroCompte(numeroCompte)
+                .orElseThrow(() -> new RuntimeException("Compte bancaire destinataire non trouvé"));
+
+        // 4️⃣ Créer une transaction de retrait
+        Transaction transaction = new Transaction();
+        transaction.setNumeroTransaction(UUID.randomUUID().toString());
+        transaction.setWalletSource(wallet);
+        transaction.setCompteSource(null);
+        transaction.setWalletDestination(null);
+        transaction.setCompteDestination(compteReel);
+        transaction.setMoyenPaiement(compteReel.getMoyensPaiement());
+        transaction.setMontant(montant);
+        transaction.setType(TypeTransaction.RETRAIT.getLibelle());
+        transaction.setDateCreation(Instant.now());
+
+        // 5️⃣ Débiter le wallet interne
+        wallet.setSoldeDisponible(wallet.getSoldeDisponible().subtract(montant));
+
+        // 6️⃣ Créditer le compte réel via API
+        boolean creditOk = realPaymentApiService.crediter(compteReel, montant);
+
+        if (creditOk) {
+            userWalletRepository.save(wallet);
+            transaction.setStatut(StatusTransaction.SUCCESS.getLibelle());
+        } else {
+            // rollback du débit si le virement échoue
+            wallet.setSoldeDisponible(wallet.getSoldeDisponible().add(montant));
+            transaction.setStatut(StatusTransaction.FAILED.getLibelle());
+        }
+
+        // 7️⃣ Enregistrer la transaction
+        transactionRepository.save(transaction);
+
+        return transaction;
     }
+
+    // Méthode pour changer le statut de la transaction et mettre les fonds en attente après validation de la livraison
+    public void mettreSoldeEnAttente(Transaction tx) {
+        tx.setStatut(StatusTransaction.SUCCESS.getLibelle());
+        tx.setDateSuccess(Instant.now());
+        transactionRepository.save(tx);
+
+        // Transférer vers wallet producteur (non utilisable)
+        userWalletService.creditWalletEnAttente(tx.getWalletDestination(), tx.getMontant());
+    }
+
+
+    // Méthode pour libérer les fonds après délai
+    public void libererTransactionsExpirees() {
+        //Récupérer la liste des transactions qui ont 30 jours d'ancienneté
+        List<Transaction> transactions = transactionRepository.findByStatutAndDateBefore(
+                StatusTransaction.SUCCESS.getLibelle(),
+                Instant.now().minus(30, ChronoUnit.DAYS)
+        );
+
+        for(Transaction tx : transactions) {
+            tx.setStatut(StatusTransaction.FREE.getLibelle());
+            transactionRepository.save(tx);
+
+            // Mise à jour du wallet
+            UserWallet wallet = tx.getWalletDestination();
+            wallet.setSoldeEnAttente(wallet.getSoldeEnAttente().subtract(tx.getMontant()));
+            wallet.setSoldeDisponible(wallet.getSoldeDisponible().add(tx.getMontant()));
+            userWalletRepository.save(wallet);
+        }
+    }
+
+
 
     public void updateStatut(UUID transactionId, StatusTransaction newStatut) {
         Transaction tx = transactionRepository.findById(transactionId)
@@ -166,5 +247,4 @@ public class TransactionService {
         tx.setStatut(newStatut.getLibelle());
         transactionRepository.save(tx);
     }
-
 }
