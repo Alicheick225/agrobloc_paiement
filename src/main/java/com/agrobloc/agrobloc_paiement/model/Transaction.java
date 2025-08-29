@@ -17,8 +17,8 @@ import java.util.UUID;
 @Table(name = "transactions")
 public class Transaction {
     @Id
-    @ColumnDefault("uuid_generate_v4()")
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
     @Column(name = "numero_transaction", unique = true, nullable = false, length = 100)

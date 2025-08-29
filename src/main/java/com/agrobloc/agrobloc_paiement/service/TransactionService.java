@@ -222,7 +222,7 @@ public class TransactionService {
     // Méthode pour libérer les fonds après délai
     public void libererTransactionsExpirees() {
         //Récupérer la liste des transactions qui ont 30 jours d'ancienneté
-        List<Transaction> transactions = transactionRepository.findByStatutAndDateBefore(
+        List<Transaction> transactions = transactionRepository.findByStatutAndDateCreationBefore(
                 StatusTransaction.SUCCESS.getLibelle(),
                 Instant.now().minus(30, ChronoUnit.DAYS)
         );

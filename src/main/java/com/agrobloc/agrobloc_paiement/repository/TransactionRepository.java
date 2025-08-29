@@ -11,7 +11,7 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
     Optional<Transaction> findByNumeroTransaction(String numero);
 
-    List<Transaction> findByStatutAndDateBefore(String statut, Instant date);
+    List<Transaction> findByStatutAndDateCreationBefore(String statut, Instant before);
 
     List<Transaction> findByStatut(String statut);
 
